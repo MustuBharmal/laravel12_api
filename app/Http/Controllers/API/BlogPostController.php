@@ -112,7 +112,7 @@ class BlogPostController extends Controller
             ], 404);
         }
 
-        //
+        // validator input
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|numeric',
             'category_id' => 'required|numeric|exists:blog_categories,id',
@@ -129,30 +129,39 @@ class BlogPostController extends Controller
         // Check if user is same as loggedin user
         $loggedInUser = Auth::user();
 
-        if ($loggedInUser->id != $request->user_id) {
-            return response()->json([
-                'status' => 'fail',
-                'message' => 'Un-authorized access'
-            ], 400);
-        }
+        // if ($loggedInUser->id != $request->user_id) {
+        //     return response()->json([
+        //         'status' => 'fail',
+        //         'message' => 'Un-authorized access'
+        //     ], 400);
+        // }
 
         //check if the category id exists
-        //handled by validation rule 'exists:blog_categories,id'
 
-        $post->user_id = $request->user_id;
-        $post->category_id = $request->category_id;
-        $post->title = $request->title;
-        $post->slug = Str::slug($request->title);
-        $post->content = $request->content;
-        $post->excerpt = $request->excerpt;
-        $post->status = $request->status;
+        // check additional condition to restrict authorized edit
 
-        $post->save();
+        if ($loggedInUser->role == 'admin' && $post->user_id == $loggedInUser->id) {
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Blog post has been updated successfully',
-        ], 201);
+            $post->user_id = $request->user_id;
+            $post->category_id = $request->category_id;
+            $post->title = $request->title;
+            $post->slug = Str::slug($request->title);
+            $post->content = $request->content;
+            $post->excerpt = $request->excerpt;
+            $post->status = $request->status;
+
+            $post->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Blog post has been updated successfully',
+            ], 201);
+        } else {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'You are not allowed to edit this blog post',
+            ], 400);
+        }
     }
 
     public function blogPostImage(Request $request, int $id)
@@ -181,12 +190,12 @@ class BlogPostController extends Controller
         // Check if user is same as loggedin user
         $loggedInUser = Auth::user();
 
-        if ($loggedInUser->id != $post->user_id) {
-            return response()->json([
-                'status' => 'fail',
-                'message' => 'Un-authorized access'
-            ], 400);
-        }
+        // if ($loggedInUser->id != $post->user_id) {
+        //     return response()->json([
+        //         'status' => 'fail',
+        //         'message' => 'Un-authorized access'
+        //     ], 400);
+        // }
 
         // image upload
         if ($request->hasFile('thumbnail') && $request->file('thumbnail')->isValid()) {
@@ -216,7 +225,7 @@ class BlogPostController extends Controller
         } else {
             return response()->json([
                 'status' => 'fail',
-                'message' => 'Invalid image  file',
+                'message' => 'You are not allowed to perforn this task',
             ], 400);
         }
     }
@@ -234,19 +243,19 @@ class BlogPostController extends Controller
                 'message' => 'Blog post not found',
             ], 404);
         }
-        // Check if user is same as loggedin user
+
         $loggedInUser = Auth::user();
-        if ($loggedInUser->id != $post->user_id) {
+        if ($loggedInUser->role == 'admin' && $post->user_id == $loggedInUser->id) {
+            $post->delete();
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Blog post has been deleted successfully',
+            ], 200);
+        } else {
             return response()->json([
                 'status' => 'fail',
-                'message' => 'Un-authorized access'
-            ], 400);
+                'message' => 'You are not allowed to delete this blog post',
+            ], 403);
         }
-
-        $post->delete();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Blog post has been deleted successfully',
-        ], 200);
     }
 }

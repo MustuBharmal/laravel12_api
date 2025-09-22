@@ -28,12 +28,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Blog Category API routes
-    Route::apiResource('/blog-categories', BlogCategoryController::class);
+    Route::apiResource('/blog-categories', BlogCategoryController::class)->middleware(['role:admin']);
 
     // Blog Post API routes
-    Route::apiResource('/blog-posts', BlogPostController::class);
+    Route::apiResource('/blog-posts', BlogPostController::class)->middleware(['role:admin,author']);
 
-    Route::post('/blog-posts-image/{post}', [BlogPostController::class, 'blogPostImage'])->name('blog-posts-image');
+    Route::post('/blog-posts-image/{post}', [BlogPostController::class, 'blogPostImage'])->name('blog-posts-image')->middleware(['role:admin,author']);
 });
 
 Route::get('/blog-categories', [BlogCategoryController::class, 'index']);
