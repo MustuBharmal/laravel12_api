@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\BlogPost;
+use App\Models\Seo;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ class BlogPostController extends Controller
     public function index()
     {
         //
-        $post = BlogPost::get();
+        $post = BlogPost::with('seo_data')->get();
 
         return response()->json([
             'status' => 'success',
@@ -38,7 +39,11 @@ class BlogPostController extends Controller
             'title' => 'required|string',
             'content' => 'required|string',
             'thumbnail' => 'nullable|image|max:2048',
+            'meta_title' => 'required',
+            'meta_description' => 'required',
+            'meta_keywords' => 'required',
         ]);
+
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'fail',
@@ -84,7 +89,18 @@ class BlogPostController extends Controller
             $data['status'] = 'published';
             $data['published_at'] = date('Y-m-d H:i:s');
         }
-        BlogPost::create($data);
+        $blogPost = BlogPost::create($data);
+
+        $postId = $blogPost->id;
+        $seoData = [
+            'post_id' => $postId,
+            'meta_title' => $request->meta_title,
+            'meta_description' => $request->meta_description,
+            'meta_keywords' => $request->meta_keywords,
+        ];
+
+        Seo::create($seoData);
+
         return response()->json([
             'status' => 'success',
             'message' => 'New blog post has been created successfully',
@@ -118,6 +134,9 @@ class BlogPostController extends Controller
             'category_id' => 'required|numeric|exists:blog_categories,id',
             'title' => 'required|string',
             'content' => 'required|string',
+            'meta_title' => 'required',
+            'meta_description' => 'required',
+            'meta_keywords' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -151,6 +170,14 @@ class BlogPostController extends Controller
             $post->status = $request->status;
 
             $post->save();
+
+            $seoData = Seo::where('post_id', $post->id)->first();
+
+            $seoData->meta_title = $request->meta_title;
+            $seoData->meta_description = $request->meta_description;
+            $seoData->meta_keywords = $request->meta_keywords;
+
+            $seoData->save();
 
             return response()->json([
                 'status' => 'success',
