@@ -6,6 +6,7 @@ use App\Http\Controllers\API\AuthController;
 
 use App\Http\Controllers\API\BlogCategoryController;
 use App\Http\Controllers\API\BlogPostController;
+use App\Http\Controllers\API\LikeController;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/user', function (Request $request) {
@@ -34,7 +35,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::apiResource('/blog-posts', BlogPostController::class)->middleware(['role:admin,author']);
 
     Route::post('/blog-posts-image/{post}', [BlogPostController::class, 'blogPostImage'])->name('blog-posts-image')->middleware(['role:admin,author']);
+
+    Route::post('/post/react', [LikeController::class, 'react'])->name('react');
 });
 
 Route::get('/blog-categories', [BlogCategoryController::class, 'index']);
 Route::get('/blog-posts', [BlogPostController::class, 'index']);
+Route::get('/post/reactions/{post}', [LikeController::class, 'reactions'])->name('reactions');
